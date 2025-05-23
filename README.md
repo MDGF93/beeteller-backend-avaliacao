@@ -32,3 +32,4 @@ A API foi construída com FastAPI e SQLAlchemy.
 ## Observação
 
 * Por padrão, a API utiliza um banco de dados SQLite local (**app.db** e **test.db**).
+* Para acessar uma versão da aplicação rodando online, utilize o link: https://beeteller-backend-avaliacao-production.up.railway.app//docs
