@@ -54,22 +54,13 @@ async def generate_test_messages(
 ):
     """
     Generate and insert random PIX messages for testing
-
-    Args:
-        ispb: Institution to set as receiver
-        number: Number of messages to generate
-
-    Returns:
-        Summary of generated messages
     """
-    # Validate ISPB format (8 digits)
     if not ispb.isdigit() or len(ispb) != 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ISPB must be an 8-digit code",
         )
 
-    # Validate number of messages (reasonable limit)
     if number <= 0 or number > 100:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -77,10 +68,8 @@ async def generate_test_messages(
         )
 
     try:
-        # Generate and insert test messages
         created_messages = create_test_messages(ispb, number, db)
 
-        # Return summary
         total_value = sum(msg["valor"] for msg in created_messages)
 
         return {
@@ -92,7 +81,6 @@ async def generate_test_messages(
         }
 
     except Exception as e:
-        # Log the error and return a 500 response
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while generating test messages: {str(e)}",

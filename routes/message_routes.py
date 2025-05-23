@@ -19,14 +19,6 @@ router = APIRouter(prefix="/api/pix")
     Initiates message retrieval for a specific institution. This endpoint uses long polling 
     (up to 8 seconds) to efficiently retrieve messages. If no messages are available within 
     the polling period, a 204 No Content response is returned.
-    
-    The response includes headers that provide information about the stream:
-    - X-Stream-Id: Unique identifier for the stream, used in subsequent requests
-    - X-Has-More: Indicates if more messages are available (true/false)
-    
-    The Accept header can be used to control the response format:
-    - application/json: Returns a single message (default)
-    - multipart/json: Returns multiple messages in an array
     """,
     response_model=Union[PixMessageResponse, List[PixMessageResponse]],
     response_model_exclude_none=True,
@@ -40,16 +32,6 @@ router = APIRouter(prefix="/api/pix")
                         "multiple": EXAMPLES["multiple_messages"],
                     }
                 }
-            },
-            "headers": {
-                "X-Stream-Id": {
-                    "description": "Unique identifier for the message stream",
-                    "schema": {"type": "string"},
-                },
-                "X-Has-More": {
-                    "description": "Indicates if more messages are available",
-                    "schema": {"type": "boolean"},
-                },
             },
         },
         204: {
@@ -84,42 +66,30 @@ async def start_stream(
 ):
     """
     Initiates message retrieval for a specific institution
-
-    Args:
-        ispb: 8-digit code identifying a payment institution
-        accept: Determines response format - application/json for single message, multipart/json for multiple messages
-
-    Returns:
-        PIX message(s) or 204 No Content if no messages available
     """
-    # Validate ISPB format (8 digits)
     if not ispb.isdigit() or len(ispb) != 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ISPB must be an 8-digit code",
         )
 
-    # Determine if single or multiple messages are requested
     single_message = True
     if accept and "multipart/json" in accept.lower():
         single_message = False
 
     try:
-        # Fetch messages with long polling (up to 8 seconds)
         messages, stream_id = await MessageProcessor.fetch_messages(
             ispb=ispb,
-            stream_id=None,  # New stream
+            stream_id=None,
             db=db,
             max_wait=8,
             single_message=single_message,
         )
 
-        # Set appropriate headers
         headers = MessageProcessor.format_response_headers(
             ispb=ispb, stream_id=stream_id, has_messages=len(messages) > 0
         )
 
-        # Return appropriate response
         if not messages:
             return Response(status_code=status.HTTP_204_NO_CONTENT, headers=headers)
 
@@ -129,10 +99,8 @@ async def start_stream(
             return JSONResponse(content=messages, headers=headers)
 
     except HTTPException as e:
-        # Re-raise HTTP exceptions
         raise e
     except Exception as e:
-        # Log the error and return a 500 response
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while processing the request: {str(e)}",
@@ -146,14 +114,6 @@ async def start_stream(
     Continues message retrieval from a previously started stream. This endpoint uses long polling 
     (up to 8 seconds) to efficiently retrieve messages. If no messages are available within 
     the polling period, a 204 No Content response is returned.
-    
-    The response includes headers that provide information about the stream:
-    - X-Stream-Id: Unique identifier for the stream, used in subsequent requests
-    - X-Has-More: Indicates if more messages are available (true/false)
-    
-    The Accept header can be used to control the response format:
-    - application/json: Returns a single message (default)
-    - multipart/json: Returns multiple messages in an array
     """,
     response_model=Union[PixMessageResponse, List[PixMessageResponse]],
     response_model_exclude_none=True,
@@ -167,16 +127,6 @@ async def start_stream(
                         "multiple": EXAMPLES["multiple_messages"],
                     }
                 }
-            },
-            "headers": {
-                "X-Stream-Id": {
-                    "description": "Unique identifier for the message stream",
-                    "schema": {"type": "string"},
-                },
-                "X-Has-More": {
-                    "description": "Indicates if more messages are available",
-                    "schema": {"type": "boolean"},
-                },
             },
         },
         204: {
@@ -217,29 +167,19 @@ async def continue_stream(
 ):
     """
     Continues message retrieval from a previously started stream
-
-    Args:
-        ispb: 8-digit code identifying a payment institution
-        interationId: The stream ID from a previous request
-        accept: Determines response format - application/json for single message, multipart/json for multiple messages
-
-    Returns:
-        PIX message(s) or 204 No Content if no messages available
     """
-    # Validate ISPB format (8 digits)
+
     if not ispb.isdigit() or len(ispb) != 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ISPB must be an 8-digit code",
         )
 
-    # Determine if single or multiple messages are requested
     single_message = True
     if accept and "multipart/json" in accept.lower():
         single_message = False
 
     try:
-        # Fetch messages with long polling (up to 8 seconds)
         messages, stream_id = await MessageProcessor.fetch_messages(
             ispb=ispb,
             stream_id=interationId,
@@ -248,12 +188,10 @@ async def continue_stream(
             single_message=single_message,
         )
 
-        # Set appropriate headers
         headers = MessageProcessor.format_response_headers(
             ispb=ispb, stream_id=stream_id, has_messages=len(messages) > 0
         )
 
-        # Return appropriate response
         if not messages:
             return Response(status_code=status.HTTP_204_NO_CONTENT, headers=headers)
 
@@ -263,10 +201,8 @@ async def continue_stream(
             return JSONResponse(content=messages, headers=headers)
 
     except HTTPException as e:
-        # Re-raise HTTP exceptions
         raise e
     except Exception as e:
-        # Log the error and return a 500 response
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while processing the request: {str(e)}",
@@ -312,15 +248,7 @@ async def terminate_stream(
 ):
     """
     Terminates a stream and confirms successful message receipt
-
-    Args:
-        ispb: 8-digit code identifying a payment institution
-        interationId: The stream ID to terminate
-
-    Returns:
-        Empty JSON object
     """
-    # Validate ISPB format (8 digits)
     if not ispb.isdigit() or len(ispb) != 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -328,7 +256,6 @@ async def terminate_stream(
         )
 
     try:
-        # Verify the stream exists and belongs to the specified ISPB
         stream = MessageStream.get_by_stream_id(db, interationId)
         if not stream:
             raise HTTPException(
@@ -342,7 +269,6 @@ async def terminate_stream(
                 detail=f"Stream {interationId} does not belong to ISPB {ispb}",
             )
 
-        # Mark messages as delivered and deactivate the stream
         success = MessageProcessor.mark_messages_delivered(interationId, db)
         if not success:
             raise HTTPException(
@@ -350,14 +276,11 @@ async def terminate_stream(
                 detail="Failed to mark messages as delivered",
             )
 
-        # Return empty JSON object as specified
         return {}
 
     except HTTPException as e:
-        # Re-raise HTTP exceptions
         raise e
     except Exception as e:
-        # Log the error and return a 500 response
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while processing the request: {str(e)}",

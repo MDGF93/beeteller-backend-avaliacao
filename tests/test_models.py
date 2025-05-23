@@ -86,7 +86,6 @@ def test_pix_message_model(db_session):
     db_session.add_all([payer, receiver])
     db_session.commit()
 
-    # Create a PIX message
     end_to_end_id = str(uuid.uuid4())
     message = PixMessage(
         endToEndId=end_to_end_id,
@@ -102,10 +101,8 @@ def test_pix_message_model(db_session):
     db_session.add(message)
     db_session.commit()
 
-    # Retrieve the message
     retrieved = PixMessage.get_by_endToEndId(db_session, end_to_end_id)
 
-    # Verify attributes
     assert retrieved.endToEndId == end_to_end_id
     assert retrieved.valor == 100.50
     assert retrieved.payer_id == payer.id
@@ -114,11 +111,9 @@ def test_pix_message_model(db_session):
     assert retrieved.delivered is False
     assert retrieved.stream_id is None
 
-    # Test relationships
     assert retrieved.pagador.nome == "Payer"
     assert retrieved.recebedor.nome == "Receiver"
 
-    # Test to_dict method
     message_dict = retrieved.to_dict()
     assert message_dict["endToEndId"] == end_to_end_id
     assert message_dict["valor"] == 100.50
@@ -132,31 +127,25 @@ def test_message_stream_model(db_session):
     """Test the MessageStream model"""
     from models.pix_message import MessageStream
 
-    # Create a message stream
     stream_id = str(uuid.uuid4())
     stream = MessageStream(stream_id=stream_id, ispb="12345678", is_active=True)
 
     db_session.add(stream)
     db_session.commit()
 
-    # Retrieve the stream
     retrieved = MessageStream.get_by_stream_id(db_session, stream_id)
 
-    # Verify attributes
     assert retrieved.stream_id == stream_id
     assert retrieved.ispb == "12345678"
     assert retrieved.is_active is True
 
-    # Test update_activity method
     old_last_active = retrieved.last_active
     retrieved.update_activity(db_session)
     db_session.commit()
 
-    # Refresh the object
     db_session.refresh(retrieved)
     assert retrieved.last_active > old_last_active
 
-    # Test create_stream method
     new_stream_id = str(uuid.uuid4())
     new_stream = MessageStream.create_stream(db_session, "87654321", new_stream_id)
     db_session.commit()
@@ -177,7 +166,6 @@ def test_message_stream_model(db_session):
     assert seventh_stream is None
 
     # Test deactivate_inactive_streams
-    # Set last_active to 1 hour ago for the first stream
     retrieved.last_active = datetime.datetime.now(
         datetime.timezone.utc
     ) - datetime.timedelta(hours=1)

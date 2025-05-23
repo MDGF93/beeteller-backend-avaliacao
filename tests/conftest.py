@@ -16,7 +16,6 @@ from main import app
 from models.pix_message import PixMessage, MessageStream
 from models.account_holder import AccountHolder
 
-# Use in-memory SQLite for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -31,7 +30,6 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# Override the get_db dependency
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -45,10 +43,8 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(scope="function")
 def test_db():
-    # Create the tables
     Base.metadata.create_all(bind=engine)
     yield
-    # Drop the tables after the test
     Base.metadata.drop_all(bind=engine)
 
 
@@ -106,11 +102,10 @@ def test_account_holder(db_session) -> Dict[str, Any]:
 @pytest.fixture(scope="function")
 def test_message(db_session, test_account_holder) -> Dict[str, Any]:
     """Create a test PIX message"""
-    # Create a second account holder for the receiver
     receiver_data = {
         "nome": "Receiver User",
         "cpfCnpj": "98765432101",
-        "ispb": "12345678",  # Same ISPB as test_account_holder
+        "ispb": "12345678",
         "agencia": "5678",
         "contaTransacional": "654321",
         "tipoConta": "CACC",
@@ -119,7 +114,6 @@ def test_message(db_session, test_account_holder) -> Dict[str, Any]:
     receiver = AccountHolder.create_or_update(db_session, receiver_data)
     db_session.flush()  # Ensure the receiver has an ID
 
-    # Create a PIX message
     import uuid
     import datetime
 

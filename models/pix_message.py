@@ -36,7 +36,6 @@ class PixMessage(Base):
         String, ForeignKey("message_streams.stream_id"), nullable=True, index=True
     )
 
-    # Relationships
     pagador = relationship(
         "AccountHolder",
         foreign_keys="[PixMessage.payer_id]",
@@ -113,7 +112,7 @@ class MessageStream(Base):
     )
     is_active = Column(Boolean, default=True)
 
-    # Relationships
+    messages = relationship("PixMessage", back_populates="stream")
     messages = relationship("PixMessage", back_populates="stream")
 
     __table_args__ = (UniqueConstraint("stream_id", name="uix_stream_id"),)

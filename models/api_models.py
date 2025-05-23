@@ -46,7 +46,6 @@ class GenerateMessagesPathParams(ISPBPathParam):
     )
 
 
-# Response Models
 class PixMessageBase(BaseModel):
     """Base model for PIX message data"""
 
@@ -157,7 +156,6 @@ class TerminateStreamResponse(BaseModel):
     model_config = {"json_schema_extra": {"example": {}}}
 
 
-# Examples for documentation
 EXAMPLES = {
     "single_message": {
         "summary": "Single PIX message",
